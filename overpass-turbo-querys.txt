@@ -1,0 +1,25 @@
+
+Boroughs:
+
+[out:json][timeout:180];
+area["name"="London"]->.a;
+(
+    relation["admin_level"="8"]["boundary"="administrative"](area.a);
+    relation["official_name"="City and County of the City of London"](area.a);
+);
+out geom;
+
+Entrances:
+
+[out:json][timeout:180];
+
+area["name"="Greater London"]["boundary"="administrative"]->.london;
+(
+  node["railway"="subway_entrance"](area.london);
+  node["railway"="station"](area.london);
+  node["station"="light_rail"](area.london);
+  node["public_transport"="entrance"]["station"~"subway|rail|light_rail"](area.london);
+  node["entrance"]["station"~"subway|rail|light_rail"](area.london);
+);
+
+out geom;
