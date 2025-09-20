@@ -2,6 +2,8 @@ import geopandas as gpd
 import os
 import string
 
+from shapely import MultiPoint
+
 station_aliases = {
     "Edgware Road (Bakerloo)": "Edgware Road",
     "Edgware Road (Circle Line)": "Edgware Road",
@@ -75,10 +77,9 @@ def find_entrance_boroughs():
         for f in os.scandir("stations_geojson")
         if f.name.endswith(".geojson")
     ]
-
     stations_gdfs.sort(key=lambda x: len(x[1]))
 
-    stations_multiple_boroughs = dict()
+    records = []
 
     for name, entrances_gdf in stations_gdfs:
         entrances_gdf = entrances_gdf.to_crs(boroughs_gdf.crs)
@@ -86,8 +87,16 @@ def find_entrance_boroughs():
         unique_boroughs = joined["short_name"].dropna().unique()
 
         if len(unique_boroughs) > 1:
-            stations_multiple_boroughs[name] = unique_boroughs
-            print(f"{name} spans {len(unique_boroughs)} boroughs: {unique_boroughs}")
+            records.append({
+                "station": name,
+                "boroughs": ",".join(unique_boroughs),
+                "geometry": MultiPoint(entrances_gdf.geometry.values)
+            })
+            print(f"{name} spans {len(unique_boroughs)} boroughs: {', '.join(unique_boroughs)}")
+
+    stations_multiple_gdf = gpd.GeoDataFrame(records, crs=boroughs_gdf.crs)
+
+    stations_multiple_gdf.to_file("stations_multiple_boroughs.json", driver="GeoJSON")
 
 if __name__ == "__main__":
     find_entrances()
